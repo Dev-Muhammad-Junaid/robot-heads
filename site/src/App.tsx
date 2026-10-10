@@ -83,13 +83,13 @@ function useStageSize() {
   return size;
 }
 
-function Dock({ shape, onChange, colors }: { shape: RobotHeadShape; onChange: (s: RobotHeadShape) => void; colors: Colors }) {
+function Dock({ shape, onChange, colors, antenna }: { shape: RobotHeadShape; onChange: (s: RobotHeadShape) => void; colors: Colors; antenna: boolean }) {
   return (
     <nav className="dock" aria-label="Shape">
       {robotHeadShapes.map((s) => (
         <button key={s} className="dock-item" aria-pressed={s === shape} aria-label={shapeLabels[s]} onClick={() => onChange(s)}>
           <span className="dock-icon">
-            <RobotHead shape={s} size={128} interactive={false} floorShadow={false} paused={q.has('paused')} aria-hidden {...colors} />
+            <RobotHead shape={s} size={128} interactive={false} floorShadow={false} antenna={antenna} paused={q.has('paused')} aria-hidden {...colors} />
           </span>
           <span className="dock-tip">{shapeLabels[s]}</span>
         </button>
@@ -167,7 +167,7 @@ interface PropLine {
   key: string;
   /* the prop's name and value; strings are quoted, anything else goes in braces */
   name: string;
-  value: string | number;
+  value: string | number | boolean;
   on: boolean;
 }
 
@@ -184,7 +184,7 @@ function PropTokens({ line }: { line: PropLine }) {
       ) : (
         <>
           <span className="tok-punct">{'{'}</span>
-          <span className="tok-number">{line.value}</span>
+          <span className="tok-number">{String(line.value)}</span>
           <span className="tok-punct">{'}'}</span>
         </>
       )}
@@ -237,6 +237,7 @@ export default function App() {
   const [shape, setShapeState] = useState<RobotHeadShape>((q.get('shape') as RobotHeadShape) ?? 'rectangle');
   const [colors, setColors] = useState<Colors>(DEFAULTS);
   const [speed, setSpeed] = useState(1);
+  const [antenna, setAntenna] = useState(!q.has('noantenna'));
   const [paused, setPaused] = useState(q.has('paused'));
   const [copied, copy] = useCopy();
   const [theme, toggleTheme] = useTheme();
@@ -247,7 +248,7 @@ export default function App() {
     u.searchParams.set('shape', s);
     history.replaceState(null, '', u);
   };
-  const changed = colors.color !== DEFAULTS.color || colors.trimColor !== DEFAULTS.trimColor || colors.screenColor !== DEFAULTS.screenColor || speed !== 1 || paused;
+  const changed = colors.color !== DEFAULTS.color || colors.trimColor !== DEFAULTS.trimColor || colors.screenColor !== DEFAULTS.screenColor || speed !== 1 || paused || !antenna;
   const lines: PropLine[] = [
     { key: 'shape', name: 'shape', value: shape, on: true },
     { key: 'state', name: 'state', value: state, on: true },
@@ -255,12 +256,13 @@ export default function App() {
     { key: 'trimColor', name: 'trimColor', value: colors.trimColor, on: colors.trimColor !== DEFAULTS.trimColor },
     { key: 'screenColor', name: 'screenColor', value: colors.screenColor, on: colors.screenColor !== DEFAULTS.screenColor },
     { key: 'speed', name: 'speed', value: speed, on: speed !== 1 },
+    { key: 'antenna', name: 'antenna', value: antenna, on: !antenna },
   ];
   const snippet = `<RobotHead\n${lines.filter((l) => l.on).map((l) => `  ${propText(l)}\n`).join('')}/>`;
 
   return (
     <div className="app">
-      <Dock shape={shape} onChange={setShape} colors={colors} />
+      <Dock shape={shape} onChange={setShape} colors={colors} antenna={antenna} />
 
       <header className="masthead">
         <div className="byline">
@@ -287,7 +289,7 @@ export default function App() {
       </header>
 
       <main className="stage" aria-label="Preview">
-        <RobotHead shape={shape} state={state} size={size} paused={paused} speed={speed} {...colors} />
+        <RobotHead shape={shape} state={state} size={size} paused={paused} speed={speed} antenna={antenna} {...colors} />
         <div className="caption">
           <h1 className="font-bold">{title(state)}</h1>
           <p>{stateHints[state]}</p>
@@ -298,6 +300,19 @@ export default function App() {
         {(Object.keys(SWATCHES) as Array<keyof Colors>).map((key) => (
           <Swatches key={key} name={key} value={colors[key]} onChange={(v) => setColors((c) => ({ ...c, [key]: v }))} />
         ))}
+
+        <div className="control">
+          <div className="control-head">
+            <span className="control-label">Antenna</span>
+          </div>
+          <div className="segments" role="group" aria-label="Antenna">
+            {[true, false].map((v) => (
+              <button key={String(v)} className="segment" aria-pressed={v === antenna} onClick={() => setAntenna(v)}>
+                {v ? 'On' : 'Off'}
+              </button>
+            ))}
+          </div>
+        </div>
 
         <div className="control">
           <div className="control-head">
@@ -324,6 +339,7 @@ export default function App() {
                 onClick={() => {
                   setColors(DEFAULTS);
                   setSpeed(1);
+                  setAntenna(true);
                   setPaused(false);
                 }}
               >
@@ -340,7 +356,7 @@ export default function App() {
         {robotHeadStates.map((s) => (
           <button key={s} className="state" aria-pressed={s === state} onClick={() => setState(s)}>
             <span className="state-head">
-              <RobotHead shape={shape} state={s} size={120} paused={paused} speed={speed} interactive={false} aria-hidden {...colors} />
+              <RobotHead shape={shape} state={s} size={120} paused={paused} speed={speed} antenna={antenna} interactive={false} aria-hidden {...colors} />
             </span>
             <span className="state-name">{title(s)}</span>
           </button>

@@ -60,6 +60,7 @@ export const RobotHead = forwardRef<HTMLCanvasElement, RobotHeadProps>(function 
     paused = false,
     interactive = true,
     floorShadow = true,
+    antenna = true,
     seed,
     className,
     style,
@@ -88,6 +89,8 @@ export const RobotHead = forwardRef<HTMLCanvasElement, RobotHeadProps>(function 
   interactiveRef.current = interactive;
   const shadowRef = useRef(floorShadow);
   shadowRef.current = floorShadow;
+  const antennaRef = useRef(antenna);
+  antennaRef.current = antenna;
 
   if (!sim.current) sim.current = new RobotSim(seedValue, stateKey);
   sim.current.setState(stateKey);
@@ -105,7 +108,7 @@ export const RobotHead = forwardRef<HTMLCanvasElement, RobotHeadProps>(function 
     if (!ctx) return;
     if (!renderer.current) renderer.current = new RobotRenderer();
     const s = sim.current!;
-    renderer.current.draw(ctx, want, animated ? s.pose : restPose(stateKey), animated ? s : null, stateKey, getShape(shapeKey), pal.current, { floorShadow: shadowRef.current });
+    renderer.current.draw(ctx, want, animated ? s.pose : restPose(stateKey), animated ? s : null, stateKey, getShape(shapeKey), pal.current, { floorShadow: shadowRef.current, antenna: antennaRef.current });
   };
 
   useEffect(() => {
@@ -126,7 +129,7 @@ export const RobotHead = forwardRef<HTMLCanvasElement, RobotHeadProps>(function 
       paint(true);
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [still, size, stateKey, shapeKey, color, trimColor, screenColor, floorShadow]);
+  }, [still, size, stateKey, shapeKey, color, trimColor, screenColor, floorShadow, antenna]);
 
   const click = (e: MouseEvent<HTMLCanvasElement>) => {
     if (interactive && !still) sim.current?.poke();

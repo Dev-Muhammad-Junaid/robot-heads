@@ -21,6 +21,7 @@ export interface Palette {
 
 export interface RenderOptions {
   floorShadow: boolean;
+  antenna: boolean;
 }
 
 type RGB = [number, number, number];
@@ -53,7 +54,7 @@ const HALF: V3 = (() => {
    bulb, the bulb's glow past that, the highest hop (with the stretch and
    the antenna's whip as it lands), the floor's shadow; and a margin, as a
    share of the canvas, so nothing ever touches the edge */
-const HEAD_TRAVEL = { antenna: 0.028 + HEAD.stem + HEAD.ball * 1.8, glow: 0.18, hop: 0.3, shadow: 0.22, margin: 0.02 };
+const HEAD_TRAVEL = { antenna: 0.028 + HEAD.stem + HEAD.ball * 1.8, glow: 0.18, hop: 0.3, shadow: 0.22, ear: 0.105, overshoot: 0.13, knob: 0.035, margin: 0.02 };
 
 /* how far the screen image reaches past the glass, so the recess never shows a gap */
 const SCREEN_OVER = 0.035;
@@ -437,9 +438,14 @@ export class RobotRenderer {
     /* Fit the whole travel, not just the rest pose: above the head the
        antenna and its bulb's glow at the top of the highest hop (a click),
        below it the floor's shadow. In head units. */
-    const ABOVE = HEAD_TRAVEL.antenna + HEAD_TRAVEL.glow + HEAD_TRAVEL.hop;
+    /* with the antenna, its allowance also covers the body rising past the hop as it
+       stretches and leans into it; without, that overshoot needs room of its own */
+    const ABOVE = opts.antenna ? HEAD_TRAVEL.antenna + HEAD_TRAVEL.glow + HEAD_TRAVEL.hop : HEAD_TRAVEL.knob + HEAD_TRAVEL.hop + HEAD_TRAVEL.overshoot;
     const BELOW = HEAD_TRAVEL.shadow;
-    const U = Math.min(size * 0.6, (size * (1 - 2 * HEAD_TRAVEL.margin)) / (2 * shape.hy + ABOVE + BELOW));
+    const inner = size * (1 - 2 * HEAD_TRAVEL.margin);
+    /* the tighter of the two: the travel top to bottom, or the ears side to side
+       (without an antenna the head is no longer bound by its height) */
+    const U = Math.min(inner / (2 * shape.hy + ABOVE + BELOW), inner / (2 * (shape.earX + HEAD_TRAVEL.ear)));
     const PLATE = plateOf(shape);
     const GLASS = glassOf(shape);
     const SCREEN = screenOf(shape);
@@ -460,7 +466,7 @@ export class RobotRenderer {
     const R = rotation(pose.yaw, pose.pitch, pose.roll);
     const cx = size / 2 + pose.x * U;
     /* the rest height that puts the top of that travel just inside the canvas */
-    const rest = size * HEAD_TRAVEL.margin + (shape.hy + ABOVE) * U;
+    const rest = (size - (2 * shape.hy + ABOVE + BELOW) * U) / 2 + (shape.hy + ABOVE) * U;
     const cy = rest - pose.lift * U;
     const by = cy + shape.hy * U;
     const P = (x: number, y: number, z: number): V3 => {
@@ -537,7 +543,8 @@ export class RobotRenderer {
       }
     };
 
-    const antenna = () => this.drawAntenna(ctx, P, U, pose, palette, sim, shown, lightNow, collar);
+    /* the knob on top always; the stem and its bulb only with the antenna on */
+    const antenna = () => this.drawAntenna(ctx, P, U, pose, palette, sim, shown, lightNow, collar, opts.antenna);
 
     if (antennaBehind) antenna();
     if (earLz < 0) drawMesh(ctx, earL, palette.trim);
@@ -641,6 +648,7 @@ export class RobotRenderer {
     shown: RobotHeadState,
     lightNow: (typeof LIGHTS)[RobotHeadState],
     collar: Mesh,
+    stem: boolean,
   ) {
     /* the collar, lit like the ears */
     const R = rotation(pose.yaw, pose.pitch, pose.roll);
@@ -668,6 +676,7 @@ export class RobotRenderer {
       ctx.fill();
       ctx.stroke();
     }
+    if (!stem) return;
 
     /* the stem bends toward its tip; the ball rides on the end */
     const top = -this.shape!.hy - 0.028;

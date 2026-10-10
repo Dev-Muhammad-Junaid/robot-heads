@@ -39,6 +39,12 @@ export interface RobotHeadProps extends Omit<CanvasHTMLAttributes<HTMLCanvasElem
   paused?: boolean;
   /** Follow the pointer with the eyes and head, and hop and spin on a click. Default `true`. */
   interactive?: boolean;
+  /**
+   * Show the antenna's stem and its light. Default `true`. Turn it off for
+   * small sizes, such as avatars in a list: the knob on top stays, and the
+   * head grows to fill the room the antenna took.
+   */
+  antenna?: boolean;
   /** Draw the soft shadow on the floor under the head. Default `true`. */
   floorShadow?: boolean;
   /** 0–1, offsets the blinks and glances so a row of heads does not move in unison. */

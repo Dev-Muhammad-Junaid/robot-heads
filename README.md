@@ -68,6 +68,7 @@ The list is exported as `robotHeadStates`.
   speed={1}               // multiplier on every animation
   paused={false}          // hold the state's still pose
   interactive             // follow the pointer, hop and spin on a click
+  antenna                 // the antenna's stem and light; off, the knob stays and the head grows
   floorShadow             // the soft shadow under the head
   seed={0.3}              // 0–1, desyncs blinks and glances in a row of heads
 />
@@ -78,6 +79,7 @@ Any other canvas attribute (`className`, `style`, `onClick`, `aria-label`, …) 
 ## Behaviour
 
 - **Pointer play.** With `interactive` on (the default), the head and eyes follow a nearby pointer, and a click makes it hop with a full spin and a happy face.
+- **Small sizes.** For avatars in a list, `antenna={false}` drops the antenna's stem and its light, keeping the knob on top, and the head grows to fill the room they took.
 - **Reduced motion.** With `prefers-reduced-motion: reduce`, or `paused`, the still pose of the state is drawn instead of the animation.
 - **Accessible by default.** The canvas has `role="img"` and an `aria-label` naming the state ("Robot, thinking"); pass your own `aria-label` to override it.
 - **Cheap to run many.** Every head on the page shares one animation loop, which sleeps while the tab is hidden, and heads of the same shape and size share their baked textures.
