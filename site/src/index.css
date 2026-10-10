@@ -103,7 +103,7 @@ button:focus-visible, label:focus-within { outline: 1.5px solid var(--soft); out
 /* ── the stage: the head on its own, the state set large under it ── */
 /* centred on the whole screen; the controls sit over its right side */
 .stage { grid-column: 1 / -1; grid-row: 2; min-height: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; }
-.caption { text-align: center; margin-top: -8px; }
+.caption { text-align: center; margin-top: 36px; }
 .caption h1 { margin: 0; font-size: 30px; font-weight: 700; letter-spacing: -0.025em; }
 .caption p { margin: 6px 0 0; color: var(--muted); font-size: 14px; }
 
@@ -156,8 +156,7 @@ button:focus-visible, label:focus-within { outline: 1.5px solid var(--soft); out
 /* ── every state, standing in a row ── */
 .states { grid-column: 1 / -1; grid-row: 3; display: flex; justify-content: center; align-items: flex-end; gap: clamp(4px, 1.6vw, 28px); min-width: 0; }
 .state { flex: 0 1 120px; display: flex; flex-direction: column; align-items: center; gap: 2px; min-width: 0; }
-.state-head { display: block; width: 100%; max-width: 120px; opacity: .38; filter: saturate(.6); transition: opacity .25s, filter .25s, transform .25s var(--ease); }
-.state-head canvas { width: 100% !important; height: auto !important; aspect-ratio: 1; }
+.state-head { display: grid; place-items: center; padding: 22px 0 14px; opacity: .38; filter: saturate(.6); transition: opacity .25s, filter .25s, transform .25s var(--ease); }
 /* on a light page fading reads as washed out: dim less, drain more colour */
 :root[data-theme='light'] .state-head { opacity: .55; filter: saturate(.25); }
 :root[data-theme='light'] .dock-icon { opacity: .6; }
@@ -187,8 +186,6 @@ button:focus-visible, label:focus-within { outline: 1.5px solid var(--soft); out
   transform: translateY(-50%) scale(var(--s)); transform-origin: left center;
   opacity: .45; transition: transform .2s var(--ease), opacity .2s;
 }
-/* the head leaves room in its canvas for hops, so the canvas overflows its slot */
-.dock-icon canvas { width: 72px !important; height: 72px !important; margin: -10px; }
 .dock-item:hover { --s: 1.4; }
 .dock-item:hover + .dock-item, .dock-item:has(+ .dock-item:hover) { --s: 1.15; }
 .dock-item:hover .dock-icon, .dock-item[aria-pressed='true'] .dock-icon { opacity: 1; }

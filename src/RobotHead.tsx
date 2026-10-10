@@ -2,7 +2,7 @@ import { forwardRef, useEffect, useId, useImperativeHandle, useRef, type MouseEv
 import type { RobotHeadProps, RobotHeadShape, RobotHeadState } from './types';
 import { getShape } from './tv/geometry';
 import { RobotSim, restPose } from './tv/sim';
-import { RobotRenderer, type Palette } from './tv/render';
+import { RobotRenderer, frameFor, type Palette } from './tv/render';
 import { linear } from './tv/light';
 import { parseColor } from './color';
 import { subscribe, pointer } from './ticker';
@@ -46,6 +46,10 @@ function palette(color: string, trim: string, screen: string): Palette {
 /**
  * A TV-headed robot: a glossy moulded shell with knob ears and an
  * antenna, and an LED matrix for a face that shows what it is doing.
+ *
+ * The element is a `size` × `size` box with the robot at rest centred
+ * in it. Its canvas reaches past the box, so hops, the antenna's glow and
+ * the floor's shadow draw outside it without taking part in layout.
  */
 export const RobotHead = forwardRef<HTMLCanvasElement, RobotHeadProps>(function RobotHead(
   {
@@ -71,6 +75,7 @@ export const RobotHead = forwardRef<HTMLCanvasElement, RobotHeadProps>(function 
   ref
 ) {
   void model;
+  const boxRef = useRef<HTMLSpanElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   useImperativeHandle(ref, () => canvasRef.current as HTMLCanvasElement);
   const reactId = useId();
@@ -95,20 +100,26 @@ export const RobotHead = forwardRef<HTMLCanvasElement, RobotHeadProps>(function 
   if (!sim.current) sim.current = new RobotSim(seedValue, stateKey);
   sim.current.setState(stateKey);
 
+  const frame = frameFor(getShape(shapeKey), antenna, size);
+  const frameRef = useRef(frame);
+  frameRef.current = frame;
+
   const paint = (animated: boolean) => {
     const canvas = canvasRef.current;
     if (!canvas) return;
     const dpr = Math.min(2, (typeof devicePixelRatio === 'number' && devicePixelRatio) || 1);
-    const want = Math.round(size * dpr);
-    if (canvas.width !== want || canvas.height !== want) {
-      canvas.width = want;
-      canvas.height = want;
+    const f = frameRef.current;
+    const w = Math.round((f.box + 2 * f.padSide) * dpr);
+    const h = Math.round((f.box + f.padTop + f.padBottom) * dpr);
+    if (canvas.width !== w || canvas.height !== h) {
+      canvas.width = w;
+      canvas.height = h;
     }
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
     if (!renderer.current) renderer.current = new RobotRenderer();
     const s = sim.current!;
-    renderer.current.draw(ctx, want, animated ? s.pose : restPose(stateKey), animated ? s : null, stateKey, getShape(shapeKey), pal.current, { floorShadow: shadowRef.current, antenna: antennaRef.current });
+    renderer.current.draw(ctx, f, dpr, animated ? s.pose : restPose(stateKey), animated ? s : null, stateKey, getShape(shapeKey), pal.current, { floorShadow: shadowRef.current, antenna: antennaRef.current });
   };
 
   useEffect(() => {
@@ -118,11 +129,13 @@ export const RobotHead = forwardRef<HTMLCanvasElement, RobotHeadProps>(function 
     }
     return subscribe((dt) => {
       const s = sim.current!;
-      const canvas = canvasRef.current;
-      if (canvas && interactiveRef.current && Number.isFinite(pointer.x)) {
-        const box = canvas.getBoundingClientRect();
+      const el = boxRef.current;
+      if (el && interactiveRef.current && Number.isFinite(pointer.x)) {
+        /* measured from the resting head's centre */
+        const box = el.getBoundingClientRect();
+        const f = frameRef.current;
         const dx = pointer.x - (box.left + box.width / 2);
-        const dy = pointer.y - (box.top + box.height * 0.56);
+        const dy = pointer.y - (box.top + f.cy - f.padTop);
         s.pointer = Math.hypot(dx, dy) < 700 ? { x: dx, y: dy } : null;
       } else s.pointer = null;
       s.update(dt * speedRef.current);
@@ -131,21 +144,35 @@ export const RobotHead = forwardRef<HTMLCanvasElement, RobotHeadProps>(function 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [still, size, stateKey, shapeKey, color, trimColor, screenColor, floorShadow, antenna]);
 
-  const click = (e: MouseEvent<HTMLCanvasElement>) => {
+  const click = (e: MouseEvent<HTMLSpanElement>) => {
     if (interactive && !still) sim.current?.poke();
     onClick?.(e);
   };
 
   return (
-    <canvas
-      ref={canvasRef}
+    <span
+      ref={boxRef}
       role="img"
       aria-label={ariaLabel ?? `Robot, ${labels[stateKey]}`}
       className={className}
       onClick={click}
-      style={{ width: size, height: size, display: 'block', cursor: interactive ? 'pointer' : undefined, ...style }}
+      style={{ position: 'relative', display: 'block', flex: 'none', width: size, height: size, cursor: interactive ? 'pointer' : undefined, ...style }}
       {...rest}
-    />
+    >
+      <canvas
+        ref={canvasRef}
+        aria-hidden
+        style={{
+          position: 'absolute',
+          left: -frame.padSide,
+          top: -frame.padTop,
+          width: frame.box + 2 * frame.padSide,
+          height: frame.box + frame.padTop + frame.padBottom,
+          display: 'block',
+          pointerEvents: 'none',
+        }}
+      />
+    </span>
   );
 });
 

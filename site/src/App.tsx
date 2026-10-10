@@ -69,10 +69,11 @@ const title = (s: string) => s[0].toUpperCase() + s.slice(1);
 function useStageSize() {
   const measure = () => {
     const w = window.innerWidth, h = window.innerHeight;
-    if (w < 900) return Math.max(240, Math.min(w - 32, 400));
+    /* the size is the resting robot itself; its hops reach past it */
+    if (w < 900) return Math.max(160, Math.min(w - 96, 260));
     /* centred on the screen, so it keeps the controls' width clear on both sides */
     const room = Math.min(w - 2 * (300 + 40 + 40), h - 300);
-    return Math.round(Math.max(260, Math.min(room, 520)));
+    return Math.round(Math.max(170, Math.min(room * 0.62, 330)));
   };
   const [size, setSize] = useState(measure);
   useEffect(() => {
@@ -89,7 +90,7 @@ function Dock({ shape, onChange, colors, antenna }: { shape: RobotHeadShape; onC
       {robotHeadShapes.map((s) => (
         <button key={s} className="dock-item" aria-pressed={s === shape} aria-label={shapeLabels[s]} onClick={() => onChange(s)}>
           <span className="dock-icon">
-            <RobotHead shape={s} size={128} interactive={false} floorShadow={false} antenna={antenna} paused={q.has('paused')} aria-hidden {...colors} />
+            <RobotHead shape={s} size={52} interactive={false} floorShadow={false} antenna={antenna} paused={q.has('paused')} aria-hidden {...colors} />
           </span>
           <span className="dock-tip">{shapeLabels[s]}</span>
         </button>
@@ -356,7 +357,7 @@ export default function App() {
         {robotHeadStates.map((s) => (
           <button key={s} className="state" aria-pressed={s === state} onClick={() => setState(s)}>
             <span className="state-head">
-              <RobotHead shape={shape} state={s} size={120} paused={paused} speed={speed} antenna={antenna} interactive={false} aria-hidden {...colors} />
+              <RobotHead shape={shape} state={s} size={72} paused={paused} speed={speed} antenna={antenna} interactive={false} aria-hidden {...colors} />
             </span>
             <span className="state-name">{title(s)}</span>
           </button>

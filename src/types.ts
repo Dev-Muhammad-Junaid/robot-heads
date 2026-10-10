@@ -1,4 +1,4 @@
-import type { CanvasHTMLAttributes, CSSProperties } from 'react';
+import type { CSSProperties, HTMLAttributes } from 'react';
 
 /** What the robot is doing: each state has its own face on the screen, its own motion and its own antenna light. */
 export type RobotHeadState =
@@ -18,14 +18,19 @@ export type RobotHeadModel = 'tv';
 /** The outline of the head, seen from the front. Every shape carries the same screen, ears and antenna. */
 export type RobotHeadShape = 'rectangle' | 'square' | 'circle' | 'hexagon';
 
-export interface RobotHeadProps extends Omit<CanvasHTMLAttributes<HTMLCanvasElement>, 'color' | 'ref'> {
+/**
+ * Any other attribute (`className`, `style`, `onClick`, `aria-label`, …)
+ * goes on the element: the `size` × `size` box the robot rests in. A `ref`
+ * reaches the canvas inside it.
+ */
+export interface RobotHeadProps extends Omit<HTMLAttributes<HTMLSpanElement>, 'color'> {
   /** Which head. Default `tv`. */
   model?: RobotHeadModel;
   /** The head's outline: `rectangle` (default), `square`, `circle` or `hexagon`. */
   shape?: RobotHeadShape;
   /** What it is doing. Default `idle`. */
   state?: RobotHeadState;
-  /** Rendered size in px. Default `160`. */
+  /** The box the robot rests in, in px; hops and the glow reach past it. Default `160`. */
   size?: number;
   /** Colour of the shell. Default a deep glossy blue. */
   color?: string;
